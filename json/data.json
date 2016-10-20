@@ -1,0 +1,121 @@
+{
+    "name": "root",
+    "children": [{
+        "name": "first1",
+        "children": [{
+            "name": "second11",
+            "children": [{
+                "name": "third111",
+                "children": [{
+                    "name": "fourth",
+                    "children": [{
+                        "name": "fifth",
+                        "children": [{
+                            "name": "sixth",
+                            "children": [{
+                                "name": "seventh",
+                                "children": [{
+                                    "name": "eighth",
+                                    "children": [{
+                                        "name": "ninth",
+                                        "children": [{
+                                            "name": "tenth",
+                                            "children": [{
+                                                "name": "eleventh",
+                                                "children": [{
+                                                    "name": "twelfth",
+                                                    "size": 3954
+                                                }]
+                                            }]
+                                        }]
+                                    }]
+                                }]
+                            }]
+                        }]
+                    }]
+                }]
+            }, {
+                "name": "third112",
+                "size": 3812
+            }]
+        }, {
+            "name": "second12",
+            "children": [{
+                "name": "third121",
+                "size": 3534
+            }, {
+                "name": "third122",
+                "size": 5731
+            }, {
+                "name": "third123",
+                "size": 7840
+            }]
+        }, {
+            "name": "second13",
+            "children": [{
+                "name": "third131",
+                "size": 7074
+            }]
+        }]
+    }, {
+        "name": "first2",
+        "children": [{
+            "name": "second21",
+            "size": 17010
+        }, {
+            "name": "second22",
+            "size": 5842
+        }, {
+            "name": "second23",
+            "size": 1041
+        }, {
+            "name": "second24",
+            "size": 5176
+        }]
+    }, {
+        "name": "first3",
+        "children": [{
+            "name": "second31",
+            "children": [{
+                "name": "third311",
+                "size": 721
+            }, {
+                "name": "third312",
+                "size": 4294
+            }, {
+                "name": "third313",
+                "size": 9800
+            }]
+        }, {
+            "name": "second32",
+            "size": 1759
+        }, {
+            "name": "second33",
+            "size": 2165
+        }]
+    }, {
+        "name": "first4",
+        "children": [{
+            "name": "second41",
+            "size": 8833
+        }, {
+            "name": "second42",
+            "size": 1732
+        }, {
+            "name": "second43",
+            "size": 3623
+        }]
+    }, {
+        "name": "first5",
+        "children": [{
+            "name": "second51",
+            "size": 1082
+        }, {
+            "name": "second52",
+            "size": 1336
+        }, {
+            "name": "second53",
+            "size": 319
+        }]
+    }]
+}
