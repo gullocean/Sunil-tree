@@ -1,68 +1,84 @@
 // Code goes here
 var jsonFolderPath = "json"
-var openFileNames = ["data.json", "test.json", "aaa.json", "bbb.json", "test2.json"];
+var openFileNames = ["data.json", "test.json", "aaa.json", "bbb.json", "test2.json", "ttt.json"];
 var saveFileName = "";
 var openFileName = openFileNames[0];
-var jsonData;
+var jsonNode;
+var theData;
 var jsonKeys = ["children", "name", "size"];
 var nodeR = 4.5;
-var ghostR = 5;
+var ghostR = 30;
 
 // context menu
-var context_menu = [{
-  title: "Copy",
-  action: function() {
-    console.log("copy action!!!");
-  }
-}, {
-  title: "Cut",
-  action: function() {
-    console.log("cut action!!!");
-  }
-}, {
-  title: "Add",
-  action: function() {
-    console.log("add action!!!");
-  }
-}, {
-  title: "Delete(this and all under it)",
-  action: function(elm, d) {
-    if (d.parent) {
-      // find child and remove it
-      for (var ii = 0; ii < d.parent.children.length; ii++) {
-        if (d.parent.children[ii].name === d.name) {
-          d.parent.children.splice(ii, 1);
-          break;
+var context_menu = [
+  {
+    title: "add a child node",
+    action: function(elm, d) {
+      // now remove the element from the parent, and insert it into the new elements children
+      if (typeof d.children !== 'undefined' || typeof d._children !== 'undefined') {
+        if (typeof d.children !== 'undefined') {
+          d.children.push(jsonNode);
+        } else {
+          d._children.push(jsonNode);
+        }
+      } else {
+        d.children = [];
+        d.children.push(jsonNode);
+      }
+      expand(d);
+      updateTree(root);
+    }
+  }, {
+    title: "Delete(this and all under it)",
+    action: function(elm, d) {
+      if (d.parent) {
+        // find child and remove it
+        for (var ii = 0; ii < d.parent.children.length; ii++) {
+          if (d.parent.children[ii].id === d.id) {
+            d.parent.children.splice(ii, 1);
+            break;
+          }
         }
       }
+      updateTree(d);
     }
-    updateTree(d);
+  }, {
+    title: "Delete(only this and merge up)",
+    action: function(elm, d) {
+      console.log("Delete(only this and merge up) action!!!");
+      if (d.parent) {
+        // find child and remove it
+        for (var ii = 0; ii < d.parent.children.length; ii++) {
+          if (d.parent.children[ii].id === d.id) {
+            var deletedNode = d.parent.children.splice(ii, 1);
+            if (deletedNode[0].children) {
+              deletedNode[0].children.forEach(function(child) {
+                d.parent.children.push(child);
+              });
+            }
+            break;
+          }
+        }
+      }
+      updateTree(d);
+    }
   }
-}, {
-  title: "Delete(only this and merge up)",
-  action: function() {
-    console.log("Delete(only this and merge up) action!!!");
-  }
-}, {
-  title: "Cancel",
-  action: function() {
-    console.log("cancel action!!!");
-  }
-}];
+];
 
 //set open file selector
-var openFileSelect = d3.select("#open-file-name").on("change", change),
-  options = openFileSelect.selectAll('option').data(openFileNames);
+var openFileSelect  = d3.select("#open-file-name").on("change", changedFileName),
+    options         = openFileSelect.selectAll('option').data(openFileNames);
 
-options.enter().append("option").text(function(d) {
-  return d;
-});
+options.enter()
+  .append("option")
+  .text(function(d) {
+    return d;
+  });
 
 //when changing of open file selector
-function change() {
-  var selectedIndex = openFileSelect.property('selectedIndex'),
-    data = options[0][selectedIndex].__data__;
-  openFileName = data;
+function changedFileName() {
+  var selectedIndex = openFileSelect.property('selectedIndex');
+      openFileName  = options[0][selectedIndex].__data__;
 }
 
 //save json data in a file
@@ -74,7 +90,7 @@ function saveData(data, fileName) {
       if (jsonKeys.indexOf(key) == -1) {
         delete d[key];
       }
-    })
+    });
   }, function(d) {
     return d.children && d.children.length > 0 ? d.children : null;
   });
@@ -96,6 +112,13 @@ function saveData(data, fileName) {
 
 //click save button
 function save() {
+  if (saveFileName == "") {
+    saveFileName = "new";
+  }
+  if (jQuery.type(theData) === "undefined") {
+    alert("there is no data!");
+    return;
+  }
   saveData(theData, saveFileName + ".json");
   updateTree(theData);
 }
@@ -106,30 +129,21 @@ function openFile() {
     root = data;
     root.x0 = viewerHeight / 2;
     root.y0 = 0;
-
-    function collapse(d) {
-      if (d.children) {
-        d._children = d.children;
-        d._children.forEach(collapse);
-        d.children = null;
-      }
-    }
-
     theData = root;
-
     updateTree(theData);
     centerNode(theData);
   });
 }
 
-//get save file name
-d3.select("#save-file-name").on("input", function() {
-  saveFileName = this.value;
-});
+//get file name to save
+d3.select("#save-file-name")
+  .on("input", function() {
+    saveFileName = this.value;
+  });
 
 // A recursive helper function for performing some setup by walking through all nodes
 function visit(parent, visitFn, childrenFn) {
-  if (!parent) return;
+  if (!parent) { return; }
   visitFn(parent);
   var children = childrenFn(parent);
   if (children) {
@@ -159,10 +173,6 @@ var maxLabelLength = 0;
 // variables for drag/drop
 var selectedNode = null;
 var draggingNode = null;
-
-// panning variables
-var panSpeed = 200;
-var panBoundary = 20; // Within 20px from edges will pan when dragging.
 
 var tree = d3.layout.tree()
   .size([viewerHeight, viewerWidth]);
@@ -233,7 +243,7 @@ dragListener = d3.behavior.drag().on("dragstart", function(d) {
   dragStarted = true;
   nodes = tree.nodes(d);
   d3.event.sourceEvent.stopPropagation();
-  // it's important that we suppress the mouseover event on the node being dragged. Otherwise it will absorb the mouseover event and the underlying node will not detect it d3.select(this).attr('pointer-events', 'none');
+  
 }).on("drag", function(d) {
   if (d == root) {
     return;
@@ -242,25 +252,7 @@ dragListener = d3.behavior.drag().on("dragstart", function(d) {
     domNode = this;
     initiateDrag(d, domNode);
   }
-  // get coords of mouseEvent relative to svg container to allow for panning
-  relCoords = d3.mouse($('svg').get(0));
-  if (relCoords[0] < panBoundary) {
-    panTimer = true;
-    pan(this, 'left');
-  } else if (relCoords[0] > ($('svg').width() - panBoundary)) {
-    panTimer = true;
-    pan(this, 'right');
-  } else if (relCoords[1] < panBoundary) {
-    panTimer = true;
-    pan(this, 'up');
-  } else if (relCoords[1] > ($('svg').height() - panBoundary)) {
-    panTimer = true;
-    pan(this, 'down');
-  } else {
-    try {
-      clearTimeout(panTimer);
-    } catch (e) {}
-  }
+
   d.x0 += d3.event.dy;
   d.y0 += d3.event.dx;
   var node = d3.select(this);
@@ -289,6 +281,7 @@ dragListener = d3.behavior.drag().on("dragstart", function(d) {
     }
     // Make sure that the node being added to is expanded so user can see added node is correctly moved
     expand(selectedNode);
+    centerNode(selectedNode);
     endDrag();
   } else {
     endDrag();
@@ -330,10 +323,12 @@ var overCircle = function(d) {
   selectedNode = d;
   updateTempConnector();
 };
+
 var outCircle = function(d) {
   selectedNode = null;
   updateTempConnector();
 };
+
 // Function to update the temporary connector indicating dragging affiliation
 var updateTempConnector = function() {
   var data = [];
@@ -388,7 +383,7 @@ function updateTree(source) {
 
   // Compute the new tree layout.
   var nodes = tree.nodes(root).reverse(),
-    links = tree.links(nodes);
+      links = tree.links(nodes);
 
   // Call visit function to establish maxLabelLength
   visit(source, function(d) {
@@ -398,12 +393,22 @@ function updateTree(source) {
     return d.children && d.children.length > 0 ? d.children : null;
   });
 
+  nodes.forEach(function(node) {
+    if (!node.children) {
+      jsonNode = $.extend({}, node);
+      var keys = Object.keys(jsonNode);
+      keys.forEach(function(key) {
+        if (jsonKeys.indexOf(key) == -1) {
+          delete jsonNode[key];
+        }
+      });
+      return;
+    }
+  });
+
   // Normalize for fixed-depth.
   nodes.forEach(function(d) {
     d.y = d.depth * (maxLabelLength * 10); //maxLabelLength * 10px
-    // alternatively to keep a fixed scale one can set a fixed depth per level
-    // Normalize for fixed-depth by commenting out below line
-    // d.y = (d.depth * 500); //500px per level.
   });
 
   // Update the nodes…
